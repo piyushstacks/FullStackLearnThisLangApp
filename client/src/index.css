@@ -1,0 +1,54 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Light mode */
+body {
+  @apply bg-white text-gray-900;
+}
+
+/* Dark mode */
+body.dark {
+  @apply bg-gray-900 text-gray-100;
+}
+
+a {
+  @apply text-blue-500 transition-colors duration-300;
+}
+a:hover {
+  @apply text-blue-700;
+}
+
+/* Typography */
+h1, h2, h3, h4, h5, h6 {
+  @apply font-semibold;
+}
+h1 {
+  @apply text-4xl;
+}
+h2 {
+  @apply text-3xl;
+}
+h3 {
+  @apply text-2xl;
+}
+p {
+  @apply text-base leading-relaxed;
+}
+
+/* Custom Components */
+.button {
+  @apply px-4 py-2 rounded bg-primary-light text-white transition-all duration-300;
+}
+.button:hover {
+  @apply bg-primary-dark;
+}
+
+body.dark .button {
+  @apply bg-primary-dark;
+}
+body.dark .button:hover {
+  @apply bg-primary-light;
+}
+
+/* Add other global styles as needed */
