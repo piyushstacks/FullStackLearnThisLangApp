@@ -4,6 +4,11 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
 const dotenv = require('dotenv');
 const cors = require('cors');
 
+const mongoose = require('mongoose');
+const passport = require('passport');
+const GoogleStrategy = require('passport-google-oauth20').Strategy;
+const jwt = require('jsonwebtoken');
+const User = require('./models/User');
 
 
 // Load environment variables from .env file
@@ -13,6 +18,58 @@ const app = express();
 app.use(cors());
 const PORT = 5000;
 
+passport.use(new GoogleStrategy({
+  clientID: process.env.GOOGLE_CLIENT_ID,
+  clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+  callbackURL: '/auth/google/callback'
+}, async (accessToken, refreshToken, profile, done) => {
+  try {
+    // Find existing user in database
+    let user = await User.findOne({ googleId: profile.id });
+    
+    if (!user) {
+      // If the user doesn't exist, create a new one
+      user = await User.create({
+        googleId: profile.id,
+        name: profile.displayName,
+        email: profile.emails[0].value,
+        avatar: profile.photos[0].value
+      });
+    }
+
+    // Pass the user data to the done callback
+    return done(null, user);
+  } catch (error) {
+    return done(error, false);
+  }
+}));
+
+// Serialize user into the session
+passport.serializeUser((user, done) => {
+  done(null, user.id);
+});
+
+// Deserialize user from the session
+passport.deserializeUser(async (id, done) => {
+  try {
+    const user = await User.findById(id);
+    done(null, user);
+  } catch (error) {
+    done(error, false);
+  }
+});
+
+// Route to initiate Google login
+app.get('/auth/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
+
+// Google callback route
+app.get('/auth/google/callback', passport.authenticate('google', { session: false }), (req, res) => {
+  // Generate a JWT for the user
+  const token = jwt.sign({ id: req.user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+
+  // Redirect back to the client with the token
+  res.redirect(`http://localhost:3000?token=${token}`);
+});
 
 
 app.use(bodyParser.json());
